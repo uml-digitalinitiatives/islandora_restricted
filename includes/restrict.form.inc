@@ -5,6 +5,47 @@
  */
 
 /**
+ * Creates the restriction ingest form.
+ *
+ * @param array $form
+ *   An array representing a Drupal form.
+ * @param array $form_state
+ *   An array containing the Drupal form state.
+ *
+ * @return array
+ *   An array representing the ingest form.
+ */
+function islandora_restricted_ingest_form(array $form, array &$form_state) {
+  return array(
+    'islandora_restricted_restrict_object' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Restrict object.'),
+      '#default_value' => 0,
+    )
+  );
+}
+
+/**
+ * Restricts or not the object being ingested.
+ *
+ * @param array $form
+ *   An array representing a Drupal form.
+ * @param array $form_state
+ *   An array containing the Drupal form state.
+ */
+function islandora_restricted_ingest_form_submit(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  dsm($form_state, 'submit');
+  if ($form_state['values']['islandora_restricted_restrict_object']) {
+    $parent = islandora_object_load($form_state['islandora']['shared_storage']['parent']);
+    $parent_restrictions = islandora_restricted_retrieve_restrictions($parent);
+    $ingesting_object = $form_state['islandora']['objects'][0];
+    dsm($parent_restrictions, 'parent restrictions');
+    islandora_restricted_add_relationships($ingesting_object, $parent_restrictions);
+  }
+}
+
+/**
  * Creates the restriction management form for display in a MENU_LOCAL_TASK.
  *
  * @param array $form

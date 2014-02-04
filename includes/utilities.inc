@@ -89,7 +89,7 @@ function islandora_restricted_parse_users_and_roles($rels_results, $current_site
   );
   foreach ($rels_results as $rels) {
     $entity_uri = $rels['object']['value'];
-    if (!$current_site) {
+    if ($current_site) {
       if (islandora_restricted_valid_user_uri($entity_uri)) {
         $parsed_rels['users'][] = $entity_uri;
       }
@@ -177,32 +177,73 @@ function islandora_restricted_retrieve_role_from_uri($entity_uri) {
  * @param AbstractObject $object
  *   An AbstractObject representing an object in Fedora.
  * @param array $params
- *   An array containing:
- *   -state: A string representing the state that is being added.
- *   -users: An array containing associative arrays:
- *     -hidden: An array that defines the UIDs that are allowed to view hidden
- *     objects.
- *     -restricted: An array that defines the UIDs are allowed to view
- *     restricted objects.
- *   -roles: An array containing associative arrays:
- *     -hidden: An array that defines the RIDs that are allowed to view hidden
- *     objects.
- *     -restricted: An array that defines the RIDs are allowed to view
- *     restricted objects.
+ *   @see islandora_restricted_parse_users_and_roles().
  */
 function islandora_restricted_add_relationships(AbstractObject $object, $params) {
   // Let's first add the state.
-  islandora_restricted_add_state_relationship($object, $params['state']);
-  foreach ($params['users'] as $restriction_type => $users) {
-    foreach ($users as $uid) {
-      islandora_restricted_add_user_relationship($object, $restriction_type, $uid);
+  if (isset($params)) {
+    islandora_restricted_add_state_relationship($object, $params['state']);
+    foreach ($params['users'] as $restriction_type => $users) {
+      foreach ($users as $entity_uri) {
+        islandora_restricted_add_user_relationship_uri($object, $restriction_type, $entity_uri);
+      }
+    }
+    foreach ($params['roles'] as $restriction_type => $roles) {
+      foreach ($roles as $entity_uri) {
+        islandora_restricted_add_role_relationship_uri($object, $restriction_type, $entity_uri);
+      }
     }
   }
-  foreach ($params['roles'] as $restriction_type => $roles) {
-    foreach ($roles as $rid) {
-      islandora_restricted_add_role_relationship($object, $restriction_type, $rid);
-    }
+}
+
+/**
+ * Add a specified user restriction.
+ *
+ * @param AbstractObject $object
+ *   An AbstractObject representing a Fedora object.
+ * @param string $restricted_state
+ *   A string representing the restricted state of the object.
+ * @param string $link_uri
+ *   The subject.
+ */
+function islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri) {
+  if ($restricted_state == 'hidden') {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
   }
+  else {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
+  }
+  $object->relationships->add(
+    ISLANDORA_RELS_EXT_URI,
+    $relationship_type,
+    $link_uri,
+    RELS_TYPE_FULL_URI
+  );
+}
+
+/**
+ * Add a specified role restriction.
+ *
+ * @param AbstractObject $object
+ *   An AbstractObject representing a Fedora object.
+ * @param string $restricted_state
+ *   A string representing the restricted state of the object.
+ * @param string $link_uri
+ *   The subject.
+ */
+function islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri) {
+  if ($restricted_state == 'hidden') {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
+  }
+  else {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
+  }
+  $object->relationships->add(
+    ISLANDORA_RELS_EXT_URI,
+    $relationship_type,
+    $link_uri,
+    RELS_TYPE_FULL_URI
+  );
 }
 
 /**
@@ -216,19 +257,8 @@ function islandora_restricted_add_relationships(AbstractObject $object, $params)
  *   The Druapl UID that is being allowed to access the object.
  */
 function islandora_restricted_add_user_relationship($object, $restricted_state, $uid) {
-  if ($restricted_state == 'hidden') {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
-  }
-  else {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
-  }
   $link_uri = islandora_restricted_create_uri_link($uid, 'user');
-  $object->relationships->add(
-    ISLANDORA_RELS_EXT_URI,
-    $relationship_type,
-    $link_uri,
-    RELS_TYPE_FULL_URI
-  );
+  islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**
@@ -242,19 +272,8 @@ function islandora_restricted_add_user_relationship($object, $restricted_state, 
  *   The Druapl RID that is being allowed to access the object.
  */
 function islandora_restricted_add_role_relationship($object, $restricted_state, $rid) {
-  if ($restricted_state == 'hidden') {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
-  }
-  else {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
-  }
   $link_uri = islandora_restricted_create_uri_link($rid, 'role');
-  $object->relationships->add(
-    ISLANDORA_RELS_EXT_URI,
-    $relationship_type,
-    $link_uri,
-    RELS_TYPE_FULL_URI
-  );
+  islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**
