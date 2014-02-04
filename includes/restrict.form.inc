@@ -65,7 +65,28 @@ function islandora_restricted_manage_form($form, $form_state, AbstractObject $ob
   // can handle future more in depth usage. For now we will handle this like
   // there's only one.
   $restricted_options = islandora_restricted_retrieve_restrictions($object);
+
   // Let's parse the hidden and restricted arrays to be used in the UI.
+  foreach ($restricted_options['hidden'] as $type => &$entities) {
+    foreach ($entities as &$entity_uri) {
+      if ($type == 'users') {
+        $entity_uri = islandora_restricted_retrieve_user_from_uri($entity_uri);
+      }
+      else {
+        $entity_uri = islandora_restricted_retrieve_role_from_uri($entity_uri);
+      }
+    }
+  }
+  foreach ($restricted_options['restricted'] as $type => &$entities) {
+    foreach ($entities as &$entity_uri) {
+      if ($type == 'users') {
+        $entity_uri = islandora_restricted_retrieve_user_from_uri($entity_uri);
+      }
+      else {
+        $entity_uri = islandora_restricted_retrieve_role_from_uri($entity_uri);
+      }
+    }
+  }
   $user_objects = entity_load('user');
   $user_list = array_map(function ($user) {
     return empty($user->name) ? variable_get('anonymous', 'Anonymous') : $user->name;
@@ -231,8 +252,8 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
     // Now let's see if we need to update the users and roles.
     foreach ($params['users'] as $user_type => $users) {
       $existing_users = $applied_restrictions[$user_type]['users'];
-      $users_deletion = array_diff_key($existing_users, $users);
-      $users_insertion = array_diff_key($users, $existing_users);
+      $users_deletion = array_diff($existing_users, $users);
+      $users_insertion = array_diff($users, $existing_users);
       foreach ($users_deletion as $delete_uid) {
         islandora_restricted_remove_user_relationship($object, $user_type, $delete_uid);
       }
@@ -242,8 +263,8 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
     }
     foreach ($params['roles'] as $role_type => $roles) {
       $existing_roles = $applied_restrictions[$role_type]['roles'];
-      $roles_deletion = array_diff_key($existing_roles, $roles);
-      $roles_insertion = array_diff_key($roles, $existing_roles);
+      $roles_deletion = array_diff($existing_roles, $roles);
+      $roles_insertion = array_diff($roles, $existing_roles);
       foreach ($roles_deletion as $delete_rid) {
         islandora_restricted_remove_role_relationship($object, $role_type, $delete_rid);
       }
@@ -258,10 +279,10 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
         'title' => t('Updating Restrictions'),
         'progress_message' => t('Please wait while the objects are being updated.'),
         'operations' => array(
-          /*array(
+          array(
             'islandora_restricted_batch_function',
-            array($object->id, $batch_query, $restricted_state, $allowed_roles, $allowed_users),
-          ),*/
+            array($object->id, $batch_query),
+          ),
         ),
         'file' => drupal_get_path('module', 'islandora_restricted') . '/includes/batch.inc',
       );

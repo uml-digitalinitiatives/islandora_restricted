@@ -24,7 +24,7 @@ function islandora_restricted_retrieve_restrictions(AbstractObject $object, $cur
     ISLANDORA_RELS_EXT_URI,
     ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP
   );
-  // There is will only be one state so let's handle it as such.
+  // There will only be one state so let's handle it as such.
   if (!empty($restricted_states_relationships)) {
     $state_rels = reset($restricted_states_relationships);
     $restrictions['state'] = $state_rels['object']['value'];
@@ -41,7 +41,6 @@ function islandora_restricted_retrieve_restrictions(AbstractObject $object, $cur
     NULL,
     RELS_TYPE_FULL_URI
   );
-
   $hidden_restrictions = islandora_restricted_parse_users_and_roles($hidden_users_and_roles, $current_site);
   $restricted_restrictions = islandora_restricted_parse_users_and_roles($restricted_users_and_roles, $current_site);
   $restrictions['hidden'] = $hidden_restrictions;
@@ -380,4 +379,33 @@ function islandora_restricted_remove_state_relationship(AbstractObject $object) 
     ISLANDORA_RELS_EXT_URI,
     ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP
   );
+}
+
+/**
+ * Determines whether the current object has a restriction set on it.
+ *
+ * @param array $restriction
+ *   An array containing the following information about the restriction:
+ *   -state: A string representing the state that is being added.
+ *   -users: An array containing associative arrays:
+ *     -hidden: An array that defines the UIDs that are allowed to view hidden
+ *     objects.
+ *     -restricted: An array that defines the UIDs are allowed to view
+ *     restricted objects.
+ *   -roles: An array containing associative arrays:
+ *     -hidden: An array that defines the RIDs that are allowed to view hidden
+ *     objects.
+ *     -restricted: An array that defines the RIDs are allowed to view
+ *     restricted objects.
+ *
+ * @return bool
+ *   TRUE if the restriction is populated, FALSE otherwise.
+ */
+function islandora_restricted_populated_restriction($restriction) {
+  if (!isset($restriction['state'])) {
+    if (empty($restriction['hidden']['users']) && empty($restriction['hidden']['roles']) && empty($restriction['restricted']['users']) && empty($restriction['restricted']['roles'])) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
