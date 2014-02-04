@@ -9,6 +9,8 @@
  *
  * @param AbstractObject $object
  *   An AbstractObject representing a Fedora object.
+ * @param bool $current_site
+ *   Whether we are restricting the results to the current site or not.
  *
  * @return array
  *   An array containing:
@@ -16,7 +18,7 @@
  *   -users: An array of user IDs that are being allowed for the type.
  *   -roles: An array of role IDs that are being allowed for the type.
  */
-function islandora_restricted_retrieve_restrictions(AbstractObject $object) {
+function islandora_restricted_retrieve_restrictions(AbstractObject $object, $current_site = FALSE) {
   $restrictions = array();
   $restricted_states_relationships = $object->relationships->get(
     ISLANDORA_RELS_EXT_URI,
@@ -40,8 +42,8 @@ function islandora_restricted_retrieve_restrictions(AbstractObject $object) {
     RELS_TYPE_FULL_URI
   );
 
-  $hidden_restrictions = islandora_restricted_parse_users_and_roles($hidden_users_and_roles);
-  $restricted_restrictions = islandora_restricted_parse_users_and_roles($restricted_users_and_roles);
+  $hidden_restrictions = islandora_restricted_parse_users_and_roles($hidden_users_and_roles, $current_site);
+  $restricted_restrictions = islandora_restricted_parse_users_and_roles($restricted_users_and_roles, $current_site);
   $restrictions['hidden'] = $hidden_restrictions;
   $restrictions['restricted'] = $restricted_restrictions;
   return $restrictions;
@@ -74,24 +76,34 @@ function islandora_restricted_create_uri_link($id, $type) {
  *
  * @param array $rels_results
  *   An array representing the relationships on the object.
+ * @param bool $current_site
+ *   Whether we are restricting to the current site or not.
  *
  * @return array
  *   An array containing the users and roles for the specified restriction type.
  */
-function islandora_restricted_parse_users_and_roles($rels_results) {
+function islandora_restricted_parse_users_and_roles($rels_results, $current_site) {
   $parsed_rels = array(
     'users' => array(),
     'roles' => array(),
   );
   foreach ($rels_results as $rels) {
     $entity_uri = $rels['object']['value'];
-    if (islandora_restricted_valid_user_uri($entity_uri)) {
-      $uid = islandora_restricted_retrieve_user_from_uri($entity_uri);
-      $parsed_rels['users'][$uid] = $uid;
+    if (!$current_site) {
+      if (islandora_restricted_valid_user_uri($entity_uri)) {
+        $parsed_rels['users'][] = $entity_uri;
+      }
+      if (islandora_restricted_valid_role_uri($entity_uri)) {
+        $parsed_rels['roles'][] = $entity_uri;
+      }
     }
-    if (islandora_restricted_valid_role_uri($entity_uri)) {
-      $rid = islandora_restricted_retrieve_role_from_uri($entity_uri);
-      $parsed_rels['roles'][$rid] = $rid;
+    else {
+      if (strpos($entity_uri, 'user') !== FALSE) {
+        $parsed_rels['users'][] = $entity_uri;
+      }
+      elseif (strpos($entity_uri, 'role') !== FALSE) {
+        $parsed_rels['roles'][] = $entity_uri;
+      }
     }
   }
   return $parsed_rels;

@@ -24,6 +24,7 @@ function islandora_restricted_manage_form($form, $form_state, AbstractObject $ob
   // can handle future more in depth usage. For now we will handle this like
   // there's only one.
   $restricted_options = islandora_restricted_retrieve_restrictions($object);
+  // Let's parse the hidden and restricted arrays to be used in the UI.
   $user_objects = entity_load('user');
   $user_list = array_map(function ($user) {
     return empty($user->name) ? variable_get('anonymous', 'Anonymous') : $user->name;
