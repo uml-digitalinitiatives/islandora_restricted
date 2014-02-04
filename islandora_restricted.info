@@ -1,0 +1,7 @@
+name = Islandora Restricted
+dependencies[] = islandora
+description = Provides simple security options to restrict objects
+configure = admin/islandora/islandora-restricted
+package = Islandora
+version = 7.x-dev
+core = 7.x

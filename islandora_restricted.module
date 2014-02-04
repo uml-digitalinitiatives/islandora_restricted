@@ -1,0 +1,71 @@
+<?php
+/**
+ * @file
+ * Holds mainly hook implementations for the islandora_restricted module.
+ */
+
+define('ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS', 'apply islandora restrictions');
+define('ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP', 'canSeeRestricted');
+define('ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP', 'canSeeHidden');
+define('ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP', 'restrictedState');
+
+/**
+ * Implements hook_menu().
+ */
+function islandora_restricted_menu() {
+  $items = array();
+  $items['admin/islandora/islandora-restricted'] = array(
+    'title' => 'Islandora Restricted',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_restricted_admin_form'),
+    'access arguments' => array('administer islandora_restricted'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['islandora/object/%islandora_object/manage/restricted'] = array(
+    'title' => 'Simple Restrictions',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_restricted_manage_form', 2),
+    'access callback' => 'islandora_restricted_access',
+    'access arguments' => array(2),
+    'file' => 'includes/restrict.form.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function islandora_restricted_permission() {
+  return array(
+    'administer islandora_restricted' => array(
+      'title' => t('Administer the Islandora Restricted module'),
+    ),
+    ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS => array(
+      'title' => t('Apply simple security restrictions to Islandora objects'),
+    ),
+  );
+}
+
+/**
+ * Access callback to display the Simple Restrictions tab.
+ *
+ * @param AbstractObject $object
+ *   An AbstractObject representing an object within Fedora.
+ *
+ * @return bool
+ *   TRUE if the user has access, FALSE otherwise.
+ */
+function islandora_restricted_access(AbstractObject $object) {
+  return islandora_object_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS, $object);
+}
+
+/**
+ * Implements hook_islandora_object_access().
+ */
+function islandora_restricted_islandora_object_access($op, $object, $user) {
+  // @TODO: This needs to be flushed out more but I think it's part of UM-28.
+  // For now let's just return a NULL.
+  return NULL;
+}
