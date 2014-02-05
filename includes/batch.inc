@@ -95,10 +95,13 @@ EOQ;
  *   -type: The type of query, either sparql or itql.
  *   -query: The defined query string.
  *   -description: The human-readable description of the query.
+ * @param string $type
+ *   The type of action that is happening either delete or apply.
  * @param array $context
  *   The context of the current batch,
  */
-function islandora_restricted_batch_function($source_pid, $batch_query, &$context) {
+function islandora_restricted_batch_function($source_pid, $batch_query, $type, &$context) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   if (empty($context['sandbox'])) {
     $context['sandbox'] = array();
     $context['sandbox']['progress'] = 0;
@@ -106,12 +109,21 @@ function islandora_restricted_batch_function($source_pid, $batch_query, &$contex
     islandora_restricted_gather_pids($source_pid, $batch_query, $batch_pids);
     $context['sandbox']['pids'] = array_keys($batch_pids);
     $context['sandbox']['items'] = count($context['sandbox']['pids']);
-    $context['results']['redirect'] = $source_pid;
     $context['results']['success'] = array();
-    $context['results']['fail'] = array();
   }
   $target_pid = array_pop($context['sandbox']['pids']);
-  islandora_restricted_batch_update($target_pid, $source_pid);
+  $context['message'] = t('Updating restrictions for @pid (@current of @total)...', array(
+    '@pid' => $target_pid,
+    '@current' => $context['sandbox']['progress'],
+    '@total' => $context['sandbox']['items'],
+  ));
+  if ($type == 'apply') {
+    islandora_restricted_batch_update($target_pid, $source_pid);
+  }
+  else {
+    islandora_restricted_remove_relationships(islandora_object_load($target_pid));
+  }
+  $context['results']['success'][] = $target_pid;
   $context['sandbox']['progress']++;
 
   // Make sure we don't divide by zero.
@@ -149,7 +161,7 @@ function islandora_restricted_gather_pids($pid, $batch_query, &$batch_pids) {
       $recurse_mappings = islandora_restricted_batch_options($result_object);
       if (!empty($recurse_mappings)) {
         foreach ($recurse_mappings as $query_choice) {
-          islandora_restricted_gather_pids($result_object->id, $query_choice, $yum);
+          islandora_restricted_gather_pids($result_object->id, $query_choice, $batch_pids);
         }
       }
     }
@@ -256,4 +268,24 @@ function islandora_restricted_batch_update_existing_restrictions(AbstractObject 
       islandora_restricted_add_entity_relationship_uri($target_object, $type, $insert_role_uri);
     }
   }
+}
+
+/**
+ * Finished function for the update restrictions batch.
+ *
+ * @param bool $success
+ *   Whether the batch was successful or not.
+ * @param array $results
+ *   An array containing the results of the batch operations.
+ * @param array $operations
+ *   The operations array that was used in the batch.
+ */
+function islandora_restricted_batch_finished($success, $results, $operations) {
+  if ($success) {
+    $message = format_plural(count($results['success']), 'One restriction updated.', '@count restrictions updated.');
+  }
+  else {
+    $message = t('Finished with an error.');
+  }
+  drupal_set_message($message);
 }
