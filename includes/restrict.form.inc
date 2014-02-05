@@ -199,7 +199,7 @@ function islandora_restricted_manage_form($form, $form_state, AbstractObject $ob
   );
   $form['delete'] = array(
     '#type' => 'submit',
-    '#access' => empty($restricted_options) ? FALSE : TRUE,
+    '#access' => islandora_restricted_populated_restriction($restricted_options) ? TRUE : FALSE,
     '#name' => 'islandora-restricted-delete',
     '#value' => t('Delete'),
   );
@@ -240,44 +240,73 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
       ),
     );
     $applied_restrictions = $form_state['values']['restrictions'];
-    // See if we need to change the state.
-    if ($restricted_state != 'public') {
-      if (isset($applied_restrictions['state'])) {
-        if ($restricted_state != $applied_restrictions['state']) {
-          islandora_restricted_remove_state_relationship($object);
-          islandora_restricted_add_state_relationship($object, $restricted_state);
-        }
+    // No current restriction so let's just add things.
+    if (!islandora_restricted_populated_restriction($applied_restrictions)) {
+      $user_uri = function ($uid) {
+        return islandora_restricted_create_uri_link($uid, 'user');
+      };
+      $role_uri = function ($rid) {
+        return islandora_restricted_create_uri_link($rid, 'role');
+      };
+      // Restructure the array for use with the utility function.
+      $to_apply = array(
+        'hidden' => array(
+          'users' => array_map($user_uri, $hidden_allowed_users),
+          'roles' => array_map($role_uri, $hidden_allowed_roles),
+        ),
+        'restricted' => array(
+          'users' => array_map($user_uri, $restricted_allowed_users),
+          'roles' => array_map($role_uri, $restricted_allowed_roles),
+        ),
+      );
+      if ($params['state'] != 'public') {
+        $to_apply['state'] = $params['state'];
       }
-      // Previously had no state associated add it.
-      else {
-        islandora_restricted_add_state_relationship($object, $restricted_state);
+      if (islandora_restricted_populated_restriction($to_apply)) {
+        islandora_restricted_add_relationships($object, $to_apply);
       }
     }
     else {
-      // Moving to public so we need to remove the state relationship.
-      islandora_restricted_remove_state_relationship($object);
-    }
-    // Now let's see if we need to update the users and roles.
-    foreach ($params['users'] as $user_type => $users) {
-      $existing_users = $applied_restrictions[$user_type]['users'];
-      $users_deletion = array_diff($existing_users, $users);
-      $users_insertion = array_diff($users, $existing_users);
-      foreach ($users_deletion as $delete_uid) {
-        islandora_restricted_remove_user_relationship($object, $user_type, $delete_uid);
+      // Already had previous restrictions populated on it.
+      // See if we need to change the state.
+      if ($restricted_state != 'public') {
+        if (isset($applied_restrictions['state'])) {
+          if ($restricted_state != $applied_restrictions['state']) {
+            islandora_restricted_remove_state_relationship($object);
+            islandora_restricted_add_state_relationship($object, $restricted_state);
+          }
+        }
+        // Previously had no state associated add it.
+        else {
+          islandora_restricted_add_state_relationship($object, $restricted_state);
+        }
       }
-      foreach ($users_insertion as $insert_uid) {
-        islandora_restricted_add_user_relationship($object, $user_type, $insert_uid);
+      else {
+        // Moving to public so we need to remove the state relationship.
+        islandora_restricted_remove_state_relationship($object);
       }
-    }
-    foreach ($params['roles'] as $role_type => $roles) {
-      $existing_roles = $applied_restrictions[$role_type]['roles'];
-      $roles_deletion = array_diff($existing_roles, $roles);
-      $roles_insertion = array_diff($roles, $existing_roles);
-      foreach ($roles_deletion as $delete_rid) {
-        islandora_restricted_remove_role_relationship($object, $role_type, $delete_rid);
+      // Now let's see if we need to update the users and roles.
+      foreach ($params['users'] as $user_type => $users) {
+        $existing_users = $applied_restrictions[$user_type]['users'];
+        $users_deletion = array_diff($existing_users, $users);
+        $users_insertion = array_diff($users, $existing_users);
+        foreach ($users_deletion as $delete_uid) {
+          islandora_restricted_remove_user_relationship($object, $user_type, $delete_uid);
+        }
+        foreach ($users_insertion as $insert_uid) {
+          islandora_restricted_add_user_relationship($object, $user_type, $insert_uid);
+        }
       }
-      foreach ($roles_insertion as $insert_rid) {
-        islandora_restricted_add_role_relationship($object, $role_type, $insert_rid);
+      foreach ($params['roles'] as $role_type => $roles) {
+        $existing_roles = $applied_restrictions[$role_type]['roles'];
+        $roles_deletion = array_diff($existing_roles, $roles);
+        $roles_insertion = array_diff($roles, $existing_roles);
+        foreach ($roles_deletion as $delete_rid) {
+          islandora_restricted_remove_role_relationship($object, $role_type, $delete_rid);
+        }
+        foreach ($roles_insertion as $insert_rid) {
+          islandora_restricted_add_role_relationship($object, $role_type, $insert_rid);
+        }
       }
     }
     // Handle batch things.

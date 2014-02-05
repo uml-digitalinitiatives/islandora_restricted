@@ -214,7 +214,7 @@ function islandora_restricted_add_relationships(AbstractObject $object, $restric
 }
 
 /**
- * Add a specified role restriction.
+ * Add a specified entity URI restriction.
  *
  * @param AbstractObject $object
  *   An AbstractObject representing a Fedora object.
@@ -231,6 +231,31 @@ function islandora_restricted_add_entity_relationship_uri($object, $restricted_s
     $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
   }
   $object->relationships->add(
+    ISLANDORA_RELS_EXT_URI,
+    $relationship_type,
+    $link_uri,
+    RELS_TYPE_FULL_URI
+  );
+}
+
+/**
+ * Delete a specified entity URI restriction.
+ *
+ * @param AbstractObject $object
+ *   An AbstractObject representing a Fedora object.
+ * @param string $restricted_state
+ *   A string representing the restricted state of the object.
+ * @param string $link_uri
+ *   The subject.
+ */
+function islandora_restricted_delete_entity_relationship_uri($object, $restricted_state, $link_uri) {
+  if ($restricted_state == 'hidden') {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
+  }
+  else {
+    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
+  }
+  $object->relationships->remove(
     ISLANDORA_RELS_EXT_URI,
     $relationship_type,
     $link_uri,
