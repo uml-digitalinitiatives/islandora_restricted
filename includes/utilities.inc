@@ -179,53 +179,22 @@ function islandora_restricted_retrieve_role_from_uri($entity_uri) {
  *   @see islandora_restricted_parse_users_and_roles().
  */
 function islandora_restricted_add_relationships(AbstractObject $object, $restriction) {
-  // Let's first add the state.
   if (islandora_restricted_populated_restriction($restriction)) {
-    dsm('populated');
     if (isset($restriction['state'])) {
       islandora_restricted_add_state_relationship($object, $restriction['state']);
     }
-    if (!empty($restriction['users'])) {
-      foreach ($restriction['users'] as $restriction_type => $users) {
-        foreach ($users as $entity_uri) {
-          dsm($entity_uri);
-          islandora_restricted_add_user_relationship_uri($object, $restriction_type, $entity_uri);
-        }
-      }
-    }
-    if (!empty($restriction['users'])) {
-      foreach ($restriction['roles'] as $restriction_type => $roles) {
-        foreach ($roles as $entity_uri) {
-          islandora_restricted_add_role_relationship_uri($object, $restriction_type, $entity_uri);
+    // Future datastructure additions possible.
+    foreach ($restriction as $key => $value) {
+      if (is_array($value) && !empty($value)) {
+        $restriction_type = $key;
+        foreach ($value as $entity_array) {
+          foreach ($entity_array as $entity_uri) {
+            islandora_restricted_add_entity_relationship_uri($object, $restriction_type, $entity_uri);
+          }
         }
       }
     }
   }
-}
-
-/**
- * Add a specified user restriction.
- *
- * @param AbstractObject $object
- *   An AbstractObject representing a Fedora object.
- * @param string $restricted_state
- *   A string representing the restricted state of the object.
- * @param string $link_uri
- *   The subject.
- */
-function islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri) {
-  if ($restricted_state == 'hidden') {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
-  }
-  else {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
-  }
-  $object->relationships->add(
-    ISLANDORA_RELS_EXT_URI,
-    $relationship_type,
-    $link_uri,
-    RELS_TYPE_FULL_URI
-  );
 }
 
 /**
@@ -238,7 +207,7 @@ function islandora_restricted_add_user_relationship_uri($object, $restricted_sta
  * @param string $link_uri
  *   The subject.
  */
-function islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri) {
+function islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri) {
   if ($restricted_state == 'hidden') {
     $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
   }
@@ -265,7 +234,7 @@ function islandora_restricted_add_role_relationship_uri($object, $restricted_sta
  */
 function islandora_restricted_add_user_relationship($object, $restricted_state, $uid) {
   $link_uri = islandora_restricted_create_uri_link($uid, 'user');
-  islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri);
+  islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**
@@ -280,7 +249,7 @@ function islandora_restricted_add_user_relationship($object, $restricted_state, 
  */
 function islandora_restricted_add_role_relationship($object, $restricted_state, $rid) {
   $link_uri = islandora_restricted_create_uri_link($rid, 'role');
-  islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri);
+  islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**
