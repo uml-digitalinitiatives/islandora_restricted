@@ -35,7 +35,6 @@ function islandora_restricted_ingest_form(array $form, array &$form_state) {
  */
 function islandora_restricted_ingest_form_submit(array $form, array &$form_state) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
-  dsm($form_state, 'submit');
   if ($form_state['values']['islandora_restricted_restrict_object']) {
     $parent = islandora_object_load($form_state['islandora']['shared_storage']['parent']);
     $parent_restrictions = islandora_restricted_retrieve_restrictions($parent);

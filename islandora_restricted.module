@@ -83,5 +83,4 @@ function islandora_restricted_islandora_ingest_steps(array $form_state) {
       'file' =>'includes/restrict.form.inc',
     ),
   );
-
 }
