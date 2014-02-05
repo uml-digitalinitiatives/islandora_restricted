@@ -179,24 +179,18 @@ function islandora_restricted_retrieve_role_from_uri($entity_uri) {
  *   @see islandora_restricted_parse_users_and_roles().
  */
 function islandora_restricted_add_relationships(AbstractObject $object, $restriction) {
-  // Let's first add the state.
   if (islandora_restricted_populated_restriction($restriction)) {
-    dsm('populated');
     if (isset($restriction['state'])) {
       islandora_restricted_add_state_relationship($object, $restriction['state']);
     }
-    if (!empty($restriction['users'])) {
-      foreach ($restriction['users'] as $restriction_type => $users) {
-        foreach ($users as $entity_uri) {
-          dsm($entity_uri);
-          islandora_restricted_add_user_relationship_uri($object, $restriction_type, $entity_uri);
-        }
-      }
-    }
-    if (!empty($restriction['users'])) {
-      foreach ($restriction['roles'] as $restriction_type => $roles) {
-        foreach ($roles as $entity_uri) {
-          islandora_restricted_add_role_relationship_uri($object, $restriction_type, $entity_uri);
+    // Future datastructure additions possible.
+    foreach ($restriction as $key => $value) {
+      if (is_array($value) && !empty($value)) {
+        $restriction_type = $key;
+        foreach ($value as $entity_array) {
+          foreach ($entity_array as $entity_uri) {
+            islandora_restricted_add_user_relationship_uri($object, $restriction_type, $entity_uri);
+          }
         }
       }
     }
