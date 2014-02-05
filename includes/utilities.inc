@@ -189,37 +189,12 @@ function islandora_restricted_add_relationships(AbstractObject $object, $restric
         $restriction_type = $key;
         foreach ($value as $entity_array) {
           foreach ($entity_array as $entity_uri) {
-            islandora_restricted_add_user_relationship_uri($object, $restriction_type, $entity_uri);
+            islandora_restricted_add_entity_relationship_uri($object, $restriction_type, $entity_uri);
           }
         }
       }
     }
   }
-}
-
-/**
- * Add a specified user restriction.
- *
- * @param AbstractObject $object
- *   An AbstractObject representing a Fedora object.
- * @param string $restricted_state
- *   A string representing the restricted state of the object.
- * @param string $link_uri
- *   The subject.
- */
-function islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri) {
-  if ($restricted_state == 'hidden') {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
-  }
-  else {
-    $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
-  }
-  $object->relationships->add(
-    ISLANDORA_RELS_EXT_URI,
-    $relationship_type,
-    $link_uri,
-    RELS_TYPE_FULL_URI
-  );
 }
 
 /**
@@ -232,7 +207,7 @@ function islandora_restricted_add_user_relationship_uri($object, $restricted_sta
  * @param string $link_uri
  *   The subject.
  */
-function islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri) {
+function islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri) {
   if ($restricted_state == 'hidden') {
     $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
   }
@@ -259,7 +234,7 @@ function islandora_restricted_add_role_relationship_uri($object, $restricted_sta
  */
 function islandora_restricted_add_user_relationship($object, $restricted_state, $uid) {
   $link_uri = islandora_restricted_create_uri_link($uid, 'user');
-  islandora_restricted_add_user_relationship_uri($object, $restricted_state, $link_uri);
+  islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**
@@ -274,7 +249,7 @@ function islandora_restricted_add_user_relationship($object, $restricted_state, 
  */
 function islandora_restricted_add_role_relationship($object, $restricted_state, $rid) {
   $link_uri = islandora_restricted_create_uri_link($rid, 'role');
-  islandora_restricted_add_role_relationship_uri($object, $restricted_state, $link_uri);
+  islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri);
 }
 
 /**

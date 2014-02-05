@@ -49,7 +49,6 @@ function islandora_restricted_ingest_form_submit(array $form, array &$form_state
     if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
       $ingesting_restrictions['restricted']['users'][] = $user_uri;
     }
-    dsm($ingesting_restrictions, '$ingesting_restrictions');
     islandora_restricted_add_relationships($ingesting_object, $ingesting_restrictions);
   }
 }

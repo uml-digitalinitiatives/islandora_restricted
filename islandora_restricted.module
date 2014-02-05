@@ -80,7 +80,7 @@ function islandora_restricted_islandora_ingest_steps(array $form_state) {
       'weight' => 47,
       'form_id' => 'islandora_restricted_ingest_form',
       'module' => 'islandora_restricted',
-      'file' =>'includes/restrict.form.inc',
+      'file' => 'includes/restrict.form.inc',
     ),
   );
 }
