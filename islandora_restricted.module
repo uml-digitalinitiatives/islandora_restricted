@@ -88,3 +88,73 @@ function islandora_restricted_islandora_ingest_steps(array $form_state) {
     ),
   );
 }
+
+/**
+ * Implements hook_islandora_basic_collection_get_query_statements().
+ */
+function islandora_restricted_islandora_basic_collection_get_query_statements($type = 'view') {
+  $islandora_prefix = ISLANDORA_RELS_EXT_URI;
+  $state_rels = ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP;
+  $hidden_rels = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
+  // Only filter if the user doesn't have the permission.
+  if (!user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS)) {
+    // Get the state so we can figure out what restrictions we need to apply.
+    return <<<EOQ
+    OPTIONAL
+    {
+        ?object <$islandora_prefix$state_rels> "hidden" ;
+                <$islandora_prefix$hidden_rels> ?entity_uri
+    }
+EOQ;
+  }
+}
+
+/**
+ * Implements hook_islandora_basic_collection_get_query_filters().
+ */
+function islandora_restricted_islandora_basic_collection_get_query_filters($type) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  global $user;
+  $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+
+  $role_matches = array();
+  foreach ($user->roles as $rid => $role_name) {
+    $role_uri = islandora_restricted_create_uri_link($rid, 'role');
+    $role_matches[] = "?entity_uri=<{$role_uri}>";
+  }
+  $role_matcher = implode(' || ', $role_matches);
+  // Only filter if the user doesn't have the permission.
+  if (!user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS)) {
+    return "(!bound(?entity_uri) || (?entity_uri=<{$user_uri}> || $role_matcher))";
+  }
+}
+
+/**
+ * Implements hook_preprocess_islandora_basic_collection_grid().
+ */
+function islandora_restricted_preprocess_islandora_basic_collection_grid(&$variables) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  global $user;
+  foreach ($variables['associated_objects_array'] as $pid => $object_array) {
+    if (!islandora_restricted_user_has_access($object_array['object'], $user)) {
+      $restricted_image = theme('image', array(
+        'path' => drupal_get_path('module', 'islandora_restricted') . '/images/access_denied.png',
+      ));
+      $restricted_image_link = l($restricted_image, $object_array['path'], array(
+        'html' => TRUE,
+        'attributes' => array('title' => $object_array['title']),
+      ));
+      $variables['associated_objects_array'][$pid]['thumbnail'] = $restricted_image;
+      $variables['associated_objects_array'][$pid]['thumb_link'] = $restricted_image_link;
+      $variables['associated_objects_array'][$pid]['dc_array'] = array();
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_islandora_basic_collection().
+ */
+function islandora_restricted_preprocess_islandora_basic_collection(&$variables) {
+  islandora_restricted_preprocess_islandora_basic_collection_grid($variables);
+}
+

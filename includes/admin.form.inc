@@ -19,26 +19,12 @@ function islandora_restricted_admin_form($form, $form_state) {
   $form['islandora_restricted_state_field'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr security state field'),
-    '#default_value' => variable_get('islandora_restricted_state_field', 'RELS_EXT_restrictedState_literal_ms'),
+    '#default_value' => variable_get('islandora_restricted_state_field', 'somedefaultupdate'),
   );
-  $form['islandora_restricted_restricted_exclude_field'] = array(
+  $form['islandora_restricted_exclude_field'] = array(
     '#type' => 'textfield',
-    '#title' => t('Entities excluded from restriction state Solr field'),
-    '#default_value' => variable_get('islandora_restricted_restricted_exclude_field', 'RELS_EXT_canSeeRestricted_uri_ms'),
-  );
-  $form['islandora_restricted_hidden_exclude_field'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Entities excluded from hidden state Solr field'),
-    '#default_value' => variable_get('islandora_restricted_hidden_exclude_field', 'RELS_EXT_canSeeHidden_uri_ms'),
-  );
-  $form['islandora_restricted_acces_denied_redirect'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Access denied redirect'),
-    '#description' => t('The URL to go to when access is denied.'),
-    '#default_value' => variable_get(
-      'islandora_restricted_acces_denied_redirect',
-      ''
-    ),
+    '#title' => t('Solr excluded restrictions field'),
+    '#default_value' => variable_get('islandora_restricted_exclude_field', 'somedefaultupdate'),
   );
   return system_settings_form($form);
 }
