@@ -404,3 +404,42 @@ function islandora_restricted_populated_restriction($restriction) {
   }
   return TRUE;
 }
+
+/**
+ * Checks if the user has access to an object by our rules.
+ *
+ * @param object
+ *   Obje
+ * @param user_to_check
+ *   User object to check for permision.
+ *
+ * @return bool
+ *   TRUE if the user has access, FALSE if not.
+ */
+function islandora_restricted_user_has_access(AbstractObject $object, $user_to_check) {
+  if (user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS, $user_to_check)) {
+    return TRUE;
+  }
+  $restrictions = islandora_restricted_retrieve_restrictions($object, TRUE);
+  if (isset($restrictions['state'])) {
+    foreach ($restrictions as $key => $value) {
+      if (is_array($value) && !empty($value)) {
+        $restriction_type = $key;
+        foreach ($value as $entity_array) {
+          if ($restriction_type == 'hidden') {
+            if (in_array($user_to_check->uid, $entity_array)) {
+              return TRUE;
+            }
+          }
+          if ($restriction_type == 'restricted') {
+            if (array_intersect($user_to_check->roles, $entity_array)) {
+              return TRUE;
+            }
+          }
+        }
+      }
+    }
+    return FALSE;
+  }
+  return TRUE;
+}

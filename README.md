@@ -2,7 +2,6 @@ CONTENTS OF THIS FILE
 ---------------------
 
  * summary
- * requirements
  * installation
  * customization
 
@@ -30,10 +29,7 @@ Objects can be in one of three states:
 If no state is present in the RELS-EXT an object is considered to be in the
 "Public" state.
 
-REQUIREMENTS
-------------
-
-  * Islandora
+Roles and users are multisite aware but object state is not.
 
 INSTALLATION
 ------------

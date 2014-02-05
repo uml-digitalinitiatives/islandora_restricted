@@ -40,10 +40,10 @@ function islandora_restricted_menu() {
 function islandora_restricted_permission() {
   return array(
     'administer islandora_restricted' => array(
-      'title' => t('Administer the Islandora Restricted module'),
+      'title' => t('Administer the Islandora Restricted module.'),
     ),
     ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS => array(
-      'title' => t('Apply simple security restrictions to Islandora objects'),
+      'title' => t('Apply simple security restrictions to Islandora objects, ignore restrictions.'),
     ),
   );
 }
@@ -65,9 +65,13 @@ function islandora_restricted_access(AbstractObject $object) {
  * Implements hook_islandora_object_access().
  */
 function islandora_restricted_islandora_object_access($op, $object, $user) {
-  // @TODO: This needs to be flushed out more but I think it's part of UM-28.
-  // For now let's just return a NULL.
-  return NULL;
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  if (islandora_restricted_user_has_access($object, $user)) {
+    return NULL;
+  }
+  if (strpos(current_path(), "islandora/object/{$object->id}") !== FALSE) {
+    drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''));
+  }
 }
 
 /**
@@ -83,19 +87,4 @@ function islandora_restricted_islandora_ingest_steps(array $form_state) {
       'file' => 'includes/restrict.form.inc',
     ),
   );
-}
-
-/**
- * Implements hook_islandora_datastream_access().
- *
- * Locks down DS that are not public or accesable by the user.
- */
-function islandora_restricted_islandora_datastream_access($op, $islandora_datastream, $user) {
-  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
-  $state = islandora_restricted_get_state($islandora_datastream->parent);
-  if ($state) {
-    //@todo let through alowed users/roles.
-    return FALSE;
-  }
-  return NULL;
 }
