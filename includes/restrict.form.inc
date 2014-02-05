@@ -21,7 +21,7 @@ function islandora_restricted_ingest_form(array $form, array &$form_state) {
       '#type' => 'checkbox',
       '#title' => t('Restrict object.'),
       '#default_value' => 0,
-    )
+    ),
   );
 }
 

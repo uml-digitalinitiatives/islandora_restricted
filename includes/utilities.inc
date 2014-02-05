@@ -176,7 +176,7 @@ function islandora_restricted_retrieve_role_from_uri($entity_uri) {
  * @param AbstractObject $object
  *   An AbstractObject representing an object in Fedora.
  * @param array $restriction
- *   @see islandora_restricted_parse_users_and_roles().
+ *   See islandora_restricted_parse_users_and_roles().
  */
 function islandora_restricted_add_relationships(AbstractObject $object, $restriction) {
   if (islandora_restricted_populated_restriction($restriction)) {
