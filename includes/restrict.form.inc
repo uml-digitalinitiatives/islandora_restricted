@@ -5,6 +5,56 @@
  */
 
 /**
+ * Creates the restriction ingest form.
+ *
+ * @param array $form
+ *   An array representing a Drupal form.
+ * @param array $form_state
+ *   An array containing the Drupal form state.
+ *
+ * @return array
+ *   An array representing the ingest form.
+ */
+function islandora_restricted_ingest_form(array $form, array &$form_state) {
+  return array(
+    'islandora_restricted_restrict_object' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Restrict object.'),
+      '#default_value' => 0,
+    )
+  );
+}
+
+/**
+ * Restricts or not the object being ingested.
+ *
+ * @global user
+ *   The current user.
+ *
+ * @param array $form
+ *   An array representing a Drupal form.
+ * @param array $form_state
+ *   An array containing the Drupal form state.
+ */
+function islandora_restricted_ingest_form_submit(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  global $user;
+
+  if ($form_state['values']['islandora_restricted_restrict_object']) {
+    $parent = islandora_object_load($form_state['islandora']['shared_storage']['parent']);
+    $ingesting_restrictions = islandora_restricted_retrieve_restrictions($parent);
+    $ingesting_object = $form_state['islandora']['objects'][0];
+    $ingesting_restrictions['state'] = 'restricted';
+    $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+    if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
+      $ingesting_restrictions['restricted']['users'][] = $user_uri;
+    }
+    dsm($ingesting_restrictions, '$ingesting_restrictions');
+    islandora_restricted_add_relationships($ingesting_object, $ingesting_restrictions);
+  }
+}
+
+/**
  * Creates the restriction management form for display in a MENU_LOCAL_TASK.
  *
  * @param array $form

@@ -69,3 +69,18 @@ function islandora_restricted_islandora_object_access($op, $object, $user) {
   // For now let's just return a NULL.
   return NULL;
 }
+
+/**
+ * Implements hook_islandora_ingest_steps().
+ */
+function islandora_restricted_islandora_ingest_steps(array $form_state) {
+  return array(
+    'islandora_restricted_ingest' => array(
+      'type' => 'form',
+      'weight' => 47,
+      'form_id' => 'islandora_restricted_ingest_form',
+      'module' => 'islandora_restricted',
+      'file' =>'includes/restrict.form.inc',
+    ),
+  );
+}
