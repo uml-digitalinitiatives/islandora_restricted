@@ -5,6 +5,27 @@
  */
 
 /**
+ * Get the islandora_restricted state of an object.
+ *
+ * Assumes a single state on an object.
+ *
+ * @param AbstractObject $object
+ *   An AbstractObject representing a Fedora object.
+ *
+ * @return
+ *   The state of the object.
+ */
+function islandora_restricted_get_state(AbstractObject $object) {
+  $restricted_states_relationships = $object->relationships->get(
+    ISLANDORA_RELS_EXT_URI,
+    ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP
+  );
+  $state_rels = reset($restricted_states_relationships);
+
+  return $state_rels['object']['value'];
+}
+
+/**
  * Retrieves any current restrictions present on an object.
  *
  * @param AbstractObject $object
@@ -20,14 +41,9 @@
  */
 function islandora_restricted_retrieve_restrictions(AbstractObject $object, $current_site = FALSE) {
   $restrictions = array();
-  $restricted_states_relationships = $object->relationships->get(
-    ISLANDORA_RELS_EXT_URI,
-    ISLANDORA_RESTRICTED_OBJECT_STATE_RELATIONSHIP
-  );
-  // There will only be one state so let's handle it as such.
-  if (!empty($restricted_states_relationships)) {
-    $state_rels = reset($restricted_states_relationships);
-    $restrictions['state'] = $state_rels['object']['value'];
+  $state = islandora_restricted_get_state($object);
+  if ($state) {
+    $restrictions['state'] = $state;
   }
   $hidden_users_and_roles = $object->relationships->get(
     ISLANDORA_RELS_EXT_URI,
