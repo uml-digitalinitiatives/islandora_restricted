@@ -318,9 +318,10 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
         'operations' => array(
           array(
             'islandora_restricted_batch_function',
-            array($object->id, $batch_query),
+            array($object->id, $batch_query, 'apply'),
           ),
         ),
+        'finished' => 'islandora_restricted_batch_finished',
         'file' => drupal_get_path('module', 'islandora_restricted') . '/includes/batch.inc',
       );
       batch_set($batch);
@@ -331,6 +332,23 @@ function islandora_restricted_manage_form_submit($form, $form_state) {
   else {
     // See if the object actually had a value set before this point.
     islandora_restricted_remove_relationships($object);
-    drupal_set_message(t('The applied restriction has been lifted!'));
+    // Handle batch things.
+    if ($form_state['values']['batch_update']) {
+      $batch_query = $form_state['islandora_restricted_batch_options'][$form_state['values']['batch_options']];
+      $batch = array(
+        'title' => t('Updating Restrictions'),
+        'progress_message' => t('Please wait while the objects are being updated.'),
+        'operations' => array(
+          array(
+            'islandora_restricted_batch_function',
+            array($object->id, $batch_query, 'delete'),
+          ),
+        ),
+        'finished' => 'islandora_restricted_batch_finished',
+        'file' => drupal_get_path('module', 'islandora_restricted') . '/includes/batch.inc',
+      );
+      batch_set($batch);
+      drupal_set_message(t('The applied restriction has been lifted!'));
+    }
   }
 }
