@@ -170,6 +170,7 @@ function islandora_restricted_preprocess_islandora_basic_collection(&$variables)
 function islandora_restricted_islandora_solr_query($islandora_solr_query) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   module_load_include('inc', 'islandora_solr', 'includes/utilities');
+
   global $user;
 
   $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
@@ -201,4 +202,47 @@ function islandora_restricted_islandora_solr_query($islandora_solr_query) {
     ':hidden)';
 
   $islandora_solr_query->solrParams['fq'][] = $fq;
+}
+
+/**
+ * Implements hook_islandora_solr_results_alter().
+ *
+ * @global user
+ *   The current user.
+ */
+function islandora_restricted_islandora_solr_object_result_alter(&$search_result, $query_processor) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  $state_field = variable_get(
+      'islandora_restricted_state_field',
+      'RELS_EXT_restrictedState_literal_ms'
+    );
+  if (isset($search_result['solr_doc'][$state_field]) && $search_result['solr_doc'][$state_field][0] == 'restricted') {
+    global $user;
+    $restrict_field = variable_get(
+      'islandora_restricted_restricted_exclude_field',
+      'RELS_EXT_canSeeRestricted_uri_ms'
+    );
+    $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+    if (isset($search_result['solr_doc'][$restrict_field])) {
+      if (in_array($user_uri, $search_result['solr_doc'][$restrict_field])) {
+        return;
+      }
+      else {
+        foreach ($user->roles as $role) {
+          $role_uri = islandora_restricted_create_uri_link($role, 'role');
+          if (in_array($role_uri, $search_result['solr_doc'][$restrict_field])) {
+            return;
+          }
+        }
+      }
+    }
+    $search_result['thumbnail_url'] = drupal_get_path(
+        'module',
+        'islandora_restricted'
+      ) .
+      '/images/access_denied.png';
+    foreach (array_keys($search_result['solr_doc']) as $key) {
+      unset($search_result['solr_doc'][$key]);
+    }
+  }
 }

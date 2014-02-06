@@ -34,5 +34,6 @@ CONFIGURATION
 -------------
 
 The Solr RELS-EXT field for pulling allowed users needs to be configured if
-the desired filtering functionality of Solr results is to work correctly.
-The redirect URL is also configurable.
+the desired filtering functionality of Solr results is to work correctly. These
+are expected to be multivalued string fields. The redirect URL is also
+configurable.
