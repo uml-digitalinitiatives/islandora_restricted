@@ -2,8 +2,7 @@ CONTENTS OF THIS FILE
 ---------------------
 
  * summary
- * installation
- * customization
+ * configuration
 
 SUMMARY
 -------
@@ -31,13 +30,9 @@ If no state is present in the RELS-EXT an object is considered to be in the
 
 Roles and users are multisite aware but object state is not.
 
-INSTALLATION
-------------
-
-Enable the islandora_restricted module.
-
-CUSTOMIZATION
+CONFIGURATION
 -------------
 
 The Solr RELS-EXT field for pulling allowed users needs to be configured if
 the desired filtering functionality of Solr results is to work correctly.
+The redirect URL is also configurable.

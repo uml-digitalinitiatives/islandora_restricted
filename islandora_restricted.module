@@ -192,7 +192,7 @@ function islandora_restricted_islandora_solr_query($islandora_solr_query) {
       islandora_solr_lesser_escape($role_uri) .
       ' OR ';
   }
-  // Check if the object is public.
+  // Check if the object is not hidden.
   $fq .= '(*:* -' .
     variable_get(
       'islandora_restricted_state_field',
