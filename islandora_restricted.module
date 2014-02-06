@@ -158,3 +158,47 @@ function islandora_restricted_preprocess_islandora_basic_collection(&$variables)
   islandora_restricted_preprocess_islandora_basic_collection_grid($variables);
 }
 
+/**
+ * Hook to update Solr queries to respect islandora_restricted rules.
+ *
+ * @global user
+ *   The current user.
+ *
+ * @param IslandoraSolrQueryProcessor $islandora_solr_query
+ *   The Solr query processor to apply XACML rules to.
+ */
+function islandora_restricted_islandora_solr_query($islandora_solr_query) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
+  global $user;
+
+  $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+  $fq = variable_get(
+      'islandora_restricted_hidden_exclude_field',
+      'RELS_EXT_canSeeHidden_uri_ms'
+    ) .
+    ':' .
+    islandora_solr_lesser_escape($user_uri) .
+    ' OR ';
+
+  // Check if any of my roles are allowed.
+  foreach ($user->roles as $role) {
+    $role_uri = islandora_restricted_create_uri_link($role, 'role');;
+    $fq .= variable_get(
+        'islandora_restricted_hidden_exclude_field',
+        'RELS_EXT_canSeeHidden_uri_ms'
+      ) .
+      ':' .
+      islandora_solr_lesser_escape($role_uri) .
+      ' OR ';
+  }
+  // Check if the object is public.
+  $fq .= '(*:* -' .
+    variable_get(
+      'islandora_restricted_state_field',
+      'RELS_EXT_restrictedState_literal_ms'
+    ) .
+    ':hidden)';
+
+  $islandora_solr_query->solrParams['fq'][] = $fq;
+}

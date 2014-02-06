@@ -433,10 +433,10 @@ function islandora_restricted_populated_restriction($restriction) {
 /**
  * Checks if the user has access to an object by our rules.
  *
- * @param object
- *   Obje
- * @param user_to_check
- *   User object to check for permision.
+ * @param AbstractObject $object
+ *   Object to check for permission.
+ * @param $user_to_check
+ *   User to check for permission.
  *
  * @return bool
  *   TRUE if the user has access, FALSE if not.
