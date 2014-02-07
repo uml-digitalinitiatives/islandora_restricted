@@ -11,7 +11,7 @@ This module provides the ability to perform simple security restrictions to
 objects within Islandora. Please note that it does not take advantage of XACML
 so it'd likely be optimal to lock down the 8080 port on the webserver that
 houses Solr and Fedora.  It will not play well with islandora_ip_embargo.
-
+It will also break islandora_xml_site forms with redirects.
 Objects can be in one of three states:
   * Public
     * Normal access rules apply and there is no change to the display of the
