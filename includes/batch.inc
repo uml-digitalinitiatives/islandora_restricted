@@ -282,16 +282,11 @@ function islandora_restricted_batch_update_existing_restrictions(AbstractObject 
  *   The operations array that was used in the batch.
  */
 function islandora_restricted_batch_finished($success, $results, $operations) {
-  $message = FALSE;
   if ($success) {
-    if (!empty($results['success'])) {
-      $message = format_plural(count($results['success']), 'One restriction updated.', '@count restrictions updated.');
-    }
+    $message = format_plural(count($results['success']), 'One restriction updated.', '@count restrictions updated.');
   }
   else {
     $message = t('Finished with an error.');
   }
-  if ($message) {
-    drupal_set_message($message);
-  }
+  drupal_set_message($message);
 }
