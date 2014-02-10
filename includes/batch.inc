@@ -111,21 +111,22 @@ function islandora_restricted_batch_function($source_pid, $batch_query, $type, &
     $context['sandbox']['items'] = count($context['sandbox']['pids']);
     $context['results']['success'] = array();
   }
-  $target_pid = array_pop($context['sandbox']['pids']);
-  $context['message'] = t('Updating restrictions for @pid (@current of @total)...', array(
-    '@pid' => $target_pid,
-    '@current' => $context['sandbox']['progress'],
-    '@total' => $context['sandbox']['items'],
-  ));
-  if ($type == 'apply') {
-    islandora_restricted_batch_update($target_pid, $source_pid);
+  if (!empty($context['sandbox']['pids'])) {
+    $target_pid = array_pop($context['sandbox']['pids']);
+    $context['message'] = t('Updating restrictions for @pid (@current of @total)...', array(
+      '@pid' => $target_pid,
+      '@current' => $context['sandbox']['progress'],
+      '@total' => $context['sandbox']['items'],
+    ));
+    if ($type == 'apply') {
+      islandora_restricted_batch_update($target_pid, $source_pid);
+    }
+    else {
+      islandora_restricted_remove_relationships(islandora_object_load($target_pid));
+    }
+    $context['results']['success'][] = $target_pid;
+    $context['sandbox']['progress']++;
   }
-  else {
-    islandora_restricted_remove_relationships(islandora_object_load($target_pid));
-  }
-  $context['results']['success'][] = $target_pid;
-  $context['sandbox']['progress']++;
-
   // Make sure we don't divide by zero.
   $context['finished'] = ($context['sandbox']['items'] == 0) ? 1 : ($context['sandbox']['progress'] / $context['sandbox']['items']);
 }

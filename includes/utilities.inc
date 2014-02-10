@@ -435,7 +435,7 @@ function islandora_restricted_populated_restriction($restriction) {
  *
  * @param AbstractObject $object
  *   Object to check for permission.
- * @param $user_to_check
+ * @param object $user_to_check
  *   User to check for permission.
  *
  * @return bool
