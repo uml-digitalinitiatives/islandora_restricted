@@ -284,7 +284,7 @@ function islandora_restricted_batch_update_existing_restrictions(AbstractObject 
 function islandora_restricted_batch_finished($success, $results, $operations) {
   $message = FALSE;
   if ($success) {
-    if (!empty($results['sucess'])) {
+    if (!empty($results['success'])) {
       $message = format_plural(count($results['success']), 'One restriction updated.', '@count restrictions updated.');
     }
   }
