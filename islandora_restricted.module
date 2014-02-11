@@ -128,7 +128,7 @@ function islandora_restricted_islandora_basic_collection_get_query_filters($type
   $role_matcher = implode(' || ', $role_matches);
   // Only filter if the user doesn't have the permission.
   if (!user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS)) {
-    return "!bound(?state) || ?state!='hidden' || (bound(?entity_uri) && !bound(?entity_uri)) || (?state='hidden' && (?entity_uri=<{$user_uri}> || $role_matcher))";
+    return "!bound(?state) || ?state!='hidden' || (?state='hidden' && (?entity_uri=<{$user_uri}> || $role_matcher))";
   }
 }
 

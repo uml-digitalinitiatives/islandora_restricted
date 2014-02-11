@@ -448,15 +448,15 @@ function islandora_restricted_user_has_access(AbstractObject $object, $user_to_c
   $restrictions = islandora_restricted_retrieve_restrictions($object, TRUE);
   if (isset($restrictions['state'])) {
     $state = $restrictions['state'];
-    foreach ($restrictions[$state] as $value) {
-      foreach ($value as $entity_type => $entity_array) {
-        if ($entity_type == 'users') {
-          if (in_array($user_to_check->uid, $entity_array)) {
-            return TRUE;
-          }
+    foreach ($restrictions[$state] as $entity_type => $entity_values) {
+      if ($entity_type == 'users') {
+        if (in_array(islandora_restricted_create_uri_link($user_to_check->uid, 'user'), $entity_values)) {
+          return TRUE;
         }
-        else {
-          if (array_intersect($user_to_check->roles, $entity_array)) {
+      }
+      else {
+        foreach ($user_to_check->roles as $rid => $role_name) {
+          if (in_array(islandora_restricted_create_uri_link($rid, 'role'), $entity_values)) {
             return TRUE;
           }
         }
