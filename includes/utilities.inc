@@ -447,19 +447,17 @@ function islandora_restricted_user_has_access(AbstractObject $object, $user_to_c
   }
   $restrictions = islandora_restricted_retrieve_restrictions($object, TRUE);
   if (isset($restrictions['state'])) {
-    foreach ($restrictions as $key => $value) {
-      if (is_array($value) && !empty($value)) {
-        $restriction_type = $key;
-        foreach ($value as $entity_array) {
-          if ($restriction_type == 'hidden') {
-            if (in_array($user_to_check->uid, $entity_array)) {
-              return TRUE;
-            }
-          }
-          if ($restriction_type == 'restricted') {
-            if (array_intersect($user_to_check->roles, $entity_array)) {
-              return TRUE;
-            }
+    $state = $restrictions['state'];
+    foreach ($restrictions[$state] as $entity_type => $entity_values) {
+      if ($entity_type == 'users') {
+        if (in_array(islandora_restricted_create_uri_link($user_to_check->uid, 'user'), $entity_values)) {
+          return TRUE;
+        }
+      }
+      else {
+        foreach ($user_to_check->roles as $rid => $role_name) {
+          if (in_array(islandora_restricted_create_uri_link($rid, 'role'), $entity_values)) {
+            return TRUE;
           }
         }
       }
