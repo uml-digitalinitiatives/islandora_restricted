@@ -186,8 +186,8 @@ function islandora_restricted_islandora_solr_query($islandora_solr_query) {
     ' OR ';
 
   // Check if any of my roles are allowed.
-  foreach ($user->roles as $role) {
-    $role_uri = islandora_restricted_create_uri_link($role, 'role');;
+  foreach ($user->roles as $rid => $role) {
+    $role_uri = islandora_restricted_create_uri_link($rid, 'role');;
     $fq .= variable_get(
         'islandora_restricted_hidden_exclude_field',
         'RELS_EXT_canSeeHidden_uri_ms'
