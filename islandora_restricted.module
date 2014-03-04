@@ -70,7 +70,12 @@ function islandora_restricted_islandora_object_access($op, $object, $user) {
     return NULL;
   }
   if (strpos(current_path(), "islandora/object/{$object->id}") !== FALSE) {
-    drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''));
+    if (! user_is_logged_in() && (bool) variable_get('islandora_restricted_redirect_login',0)) {
+      // User is not logged in and we are redirecting to a login page/block
+      drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''), array('query'=>array('destination'=>current_path())));
+    } else {
+      drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''));
+    }
   }
 }
 

@@ -40,5 +40,12 @@ function islandora_restricted_admin_form($form, $form_state) {
       ''
     ),
   );
+  $form['islandora_restricted_redirect_login'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Redirect to a login form?'),
+    '#description' => t('If you are redirecting to a login form or page with a login box, we will pass the object path to allow you to redirect directly back to the object once you have logged in.'),
+    '#return_value' => 1,
+    '#default_value' => variable_get('islandora_restricted_redirect_login',0),
+  );
   return system_settings_form($form);
 }
