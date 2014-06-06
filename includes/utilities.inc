@@ -442,7 +442,12 @@ function islandora_restricted_populated_restriction($restriction) {
  *   TRUE if the user has access, FALSE if not.
  */
 function islandora_restricted_user_has_access(AbstractObject $object, $user_to_check) {
-  if (user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS, $user_to_check)) {
+  // This means that all people that can add a restriction can see ALL objects.
+  // if (user_access(ISLANDORA_RESTRICTED_APPLY_RESTRICTIONS, $user_to_check)) {
+    
+  // Instead we'll leave the fixing of broken restrictions to a higher
+  // level of rights
+  if (user_access('administer site configuration', $user_to_check)) {
     return TRUE;
   }
   $restrictions = islandora_restricted_retrieve_restrictions($object, TRUE);
