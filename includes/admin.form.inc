@@ -15,7 +15,7 @@
  * @return array
  *   An array representing the administration form.
  */
-function islandora_restricted_admin_form($form, $form_state) {
+function islandora_restricted_admin_form($form, &$form_state) {
   $form['islandora_restricted_state_field'] = array(
     '#type' => 'textfield',
     '#title' => t('Solr security state field'),

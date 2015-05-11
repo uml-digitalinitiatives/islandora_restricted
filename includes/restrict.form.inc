@@ -66,7 +66,7 @@ function islandora_restricted_ingest_form_submit(array $form, array &$form_state
  * @return array
  *   An array representing the manage form.
  */
-function islandora_restricted_manage_form($form, $form_state, AbstractObject $object) {
+function islandora_restricted_manage_form($form, &$form_state, AbstractObject $object) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   module_load_include('inc', 'islandora_restricted', 'includes/batch');
   // This currently retrieves all restrictions placed on the object which
@@ -218,7 +218,7 @@ function islandora_restricted_manage_form($form, $form_state, AbstractObject $ob
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function islandora_restricted_manage_form_submit($form, $form_state) {
+function islandora_restricted_manage_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   $object = menu_get_object('islandora_object', '2');
   // Do submit things.
