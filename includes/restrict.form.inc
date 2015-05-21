@@ -44,7 +44,10 @@ function islandora_restricted_ingest_form_submit(array $form, array &$form_state
     $parent = islandora_object_load($form_state['islandora']['shared_storage']['parent']);
     $ingesting_restrictions = islandora_restricted_retrieve_restrictions($parent);
     $ingesting_object = $form_state['islandora']['objects'][0];
-    $ingesting_restrictions['state'] = 'restricted';
+    // We want it restricted, unless it is hidden.
+    if ($ingesting_restrictions['state'] == 'hidden') {
+      $ingesting_restrictions['state'] = 'restricted';
+    }
     $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
     if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
       $ingesting_restrictions['restricted']['users'][] = $user_uri;
