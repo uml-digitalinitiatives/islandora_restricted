@@ -5,58 +5,6 @@
  */
 
 /**
- * Creates the restriction ingest form.
- *
- * @param array $form
- *   An array representing a Drupal form.
- * @param array $form_state
- *   An array containing the Drupal form state.
- *
- * @return array
- *   An array representing the ingest form.
- */
-function islandora_restricted_ingest_form(array $form, array &$form_state) {
-  return array(
-    'islandora_restricted_restrict_object' => array(
-      '#type' => 'checkbox',
-      '#title' => t('Restrict object.'),
-      '#default_value' => 0,
-    ),
-  );
-}
-
-/**
- * Restricts or not the object being ingested.
- *
- * @global user
- *   The current user.
- *
- * @param array $form
- *   An array representing a Drupal form.
- * @param array $form_state
- *   An array containing the Drupal form state.
- */
-function islandora_restricted_ingest_form_submit(array $form, array &$form_state) {
-  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
-  global $user;
-
-  if ($form_state['values']['islandora_restricted_restrict_object']) {
-    $parent = islandora_object_load($form_state['islandora']['shared_storage']['parent']);
-    $ingesting_restrictions = islandora_restricted_retrieve_restrictions($parent);
-    $ingesting_object = $form_state['islandora']['objects'][0];
-    // We want it restricted, unless it is hidden.
-    if ($ingesting_restrictions['state'] == 'hidden') {
-      $ingesting_restrictions['state'] = 'restricted';
-    }
-    $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
-    if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
-      $ingesting_restrictions['restricted']['users'][] = $user_uri;
-    }
-    islandora_restricted_add_relationships($ingesting_object, $ingesting_restrictions);
-  }
-}
-
-/**
  * Creates the restriction management form for display in a MENU_LOCAL_TASK.
  *
  * @param array $form
@@ -72,6 +20,7 @@ function islandora_restricted_ingest_form_submit(array $form, array &$form_state
 function islandora_restricted_manage_form($form, &$form_state, AbstractObject $object) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   module_load_include('inc', 'islandora_restricted', 'includes/batch');
+  
   // This currently retrieves all restrictions placed on the object which
   // can handle future more in depth usage. For now we will handle this like
   // there's only one.
@@ -223,7 +172,9 @@ function islandora_restricted_manage_form($form, &$form_state, AbstractObject $o
  */
 function islandora_restricted_manage_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
-  $object = menu_get_object('islandora_object', '2');
+  global $user;
+  
+  $object = menu_get_object('islandora_object', 2);
   // Do submit things.
   if ($form_state['triggering_element']['#name'] == 'islandora-restricted-submit') {
     $restricted_state = $form_state['values']['restriction_choices'];
@@ -231,6 +182,25 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
     $hidden_allowed_roles = $form_state['values']['hidden_allowed_roles'];
     $restricted_allowed_users = $form_state['values']['restricted_allowed_users'];
     $restricted_allowed_roles = $form_state['values']['restricted_allowed_roles'];
+    
+    // Add admin if not there
+    $user_uri = islandora_restricted_create_uri_link(1, 'user');
+    if (!in_array($user_uri, $hidden_allowed_users)) {
+      $hidden_allowed_users[] = $user_uri;
+    }
+    if (!in_array($user_uri, $restricted_allowed_users)) {
+      $restricted_allowed_users[] = $user_uri;
+    }
+    
+    // Add current user if not there
+    $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+    if (!in_array($user_uri, $hidden_allowed_users)) {
+      $hidden_allowed_users[] = $user_uri;
+    }
+    if (!in_array($user_uri, $restricted_allowed_users)) {
+      $restricted_allowed_users[] = $user_uri;
+    }
+    
     $params = array(
       'state' => $restricted_state,
       'users' => array(
@@ -242,9 +212,11 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
         'restricted' => $restricted_allowed_roles,
       ),
     );
+    dd($params, 'restrictions to add');
     $applied_restrictions = $form_state['values']['restrictions'];
     // No current restriction so let's just add things.
     if (!islandora_restricted_populated_restriction($applied_restrictions)) {
+      watchdog('islandora_restricted', 'No current restrictions', NULL, WATCHDOG_DEBUG);
       $user_uri = function ($uid) {
         return islandora_restricted_create_uri_link($uid, 'user');
       };
@@ -270,22 +242,26 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
       }
     }
     else {
+      watchdog('islandora_restricted', 'Previous restrictions', NULL, WATCHDOG_DEBUG);
       // Already had previous restrictions populated on it.
       // See if we need to change the state.
       if ($restricted_state != 'public') {
         if (isset($applied_restrictions['state'])) {
           if ($restricted_state != $applied_restrictions['state']) {
+            watchdog('islandora_restricted', 'add state @s', array('@s' => $restricted_state), WATCHDOG_DEBUG);
             islandora_restricted_remove_state_relationship($object);
             islandora_restricted_add_state_relationship($object, $restricted_state);
           }
         }
         // Previously had no state associated add it.
         else {
+          watchdog('islandora_restricted', 'no state', NULL, WATCHDOG_DEBUG);
           islandora_restricted_add_state_relationship($object, $restricted_state);
         }
       }
       else {
         // Moving to public so we need to remove the state relationship.
+        watchdog('islandora_restricted', 'make public', NULL, WATCHDOG_DEBUG);
         islandora_restricted_remove_state_relationship($object);
       }
       // Now let's see if we need to update the users and roles.
@@ -294,9 +270,11 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
         $users_deletion = array_diff($existing_users, $users);
         $users_insertion = array_diff($users, $existing_users);
         foreach ($users_deletion as $delete_uid) {
+          watchdog('islandora_restricted', 'delete user @s', array('@s' => $delete_uid), WATCHDOG_DEBUG);
           islandora_restricted_remove_user_relationship($object, $user_type, $delete_uid);
         }
         foreach ($users_insertion as $insert_uid) {
+          watchdog('islandora_restricted', 'insert user @s', array('@s' => $insert_uid), WATCHDOG_DEBUG);
           islandora_restricted_add_user_relationship($object, $user_type, $insert_uid);
         }
       }
@@ -305,15 +283,18 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
         $roles_deletion = array_diff($existing_roles, $roles);
         $roles_insertion = array_diff($roles, $existing_roles);
         foreach ($roles_deletion as $delete_rid) {
+          watchdog('islandora_restricted', 'delete role @s', array('@s' => $delete_rid), WATCHDOG_DEBUG);
           islandora_restricted_remove_role_relationship($object, $role_type, $delete_rid);
         }
         foreach ($roles_insertion as $insert_rid) {
+          watchdog('islandora_restricted', 'insert role @s', array('@s' => $insert_rid), WATCHDOG_DEBUG);
           islandora_restricted_add_role_relationship($object, $role_type, $insert_rid);
         }
       }
     }
     // Handle batch things.
     if ($form_state['values']['batch_update']) {
+      watchdog('islandora_restricted', 'Batch update restrictions', NULL, WATCHDOG_DEBUG);
       $batch_query = $form_state['islandora_restricted_batch_options'][$form_state['values']['batch_options']];
       $batch = array(
         'title' => t('Updating Restrictions'),
@@ -333,6 +314,7 @@ function islandora_restricted_manage_form_submit($form, &$form_state) {
   }
   // Do delete things.
   else {
+    watchdog('islandora_restricted', 'Not islandora-restricted-submit', NULL, WATCHDOG_DEBUG);
     // See if the object actually had a value set before this point.
     islandora_restricted_remove_relationships($object);
     // Handle batch things.

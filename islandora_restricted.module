@@ -69,6 +69,7 @@ function islandora_restricted_islandora_object_access($op, $object, $user) {
   if (islandora_restricted_user_has_access($object, $user)) {
     return NULL;
   }
+  watchdog('islandora_restricted', 'Denied access to @pid for user @u to do (@op)', array('@u' => $user->uid, '@pid' => $object->id, '@op' => $op), WATCHDOG_DEBUG);
   if (strpos(current_path(), "islandora/object/{$object->id}") !== FALSE) {
     if (! user_is_logged_in() && strlen(variable_get('islandora_restricted_redirect_login', '')) > 0) {
       // User is not logged in and we are redirecting to a login page/block
@@ -83,15 +84,66 @@ function islandora_restricted_islandora_object_access($op, $object, $user) {
  * Implements hook_islandora_ingest_steps().
  */
 function islandora_restricted_islandora_ingest_steps(array $form_state) {
+  $shared_storage = islandora_ingest_form_get_shared_storage($form_state);
+  if (empty($shared_storage['parent'])) {
+    return;
+  }
+  $parent = $shared_storage['parent'];
   return array(
     'islandora_restricted_ingest' => array(
-      'type' => 'form',
-      'weight' => 47,
-      'form_id' => 'islandora_restricted_ingest_form',
+      'type' => 'callback',
+      'weight' => 8,
       'module' => 'islandora_restricted',
-      'file' => 'includes/restrict.form.inc',
+      'do_function' => array(
+        'function' => 'islandora_restricted_apply_policy',
+        'args' => array($parent),
+      ),
+      'undo_function' => array(
+        'function' => 'islandora_restricted_undo_policy',
+        'args' => array(),
+      ),
     ),
   );
+}
+
+/**
+ * Applies the parent's permissions to the child if it exists.
+ *
+ * @param array $form_state
+ *   The passed through form_state from hook_islandora_ingest_steps().
+ * @param string $parent
+ *   PID of the parent object.
+ */
+function islandora_restricted_apply_policy(&$form_state, $parent = NULL) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  global $user;
+
+  if (isset($parent)) {
+    $parent_object = islandora_object_load($parent);
+
+    $ingesting_restrictions = islandora_restricted_retrieve_restrictions($parent_object);
+    if (isset($ingesting_restrictions['state'])) {
+      $user_uri = islandora_restricted_create_uri_link($user->uid, 'user');
+      if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
+        $ingesting_restrictions['restricted']['users'][] = $user_uri;
+      }
+      foreach ($form_state['islandora']['objects'] as $object) {
+        islandora_restricted_add_relationships($object, $ingesting_restrictions);
+      }
+    }
+  }
+}
+
+/**
+ * Removes any islandora_restricted permissions from the objects
+ *
+ * @param array $form_state
+ *   The passed through form_state from hook_islandora_ingest_steps().
+ */
+function islandora_restricted_undo_policy(&$form_state) {
+  foreach ($form_state['islandora']['objects'] as $object) {
+    islandora_restricted_remove_state_relationship($object);
+  }
 }
 
 /**
@@ -208,6 +260,8 @@ function islandora_restricted_islandora_solr_query($islandora_solr_query) {
       'RELS_EXT_restrictedState_literal_ms'
     ) .
     ':hidden)';
+    
+    watchdog('islandora_restricted', 'adding solr fq @fq', array('@fq' => $fq), WATCHDOG_DEBUG);
 
   $islandora_solr_query->solrParams['fq'][] = $fq;
 }
