@@ -67,17 +67,46 @@ function islandora_restricted_access(AbstractObject $object) {
 function islandora_restricted_islandora_object_access($op, $object, $user) {
   module_load_include('inc', 'islandora_restricted', 'includes/utilities');
   if (islandora_restricted_user_has_access($object, $user)) {
-    return NULL;
+    return TRUE;
   }
   watchdog('islandora_restricted', 'Denied access to @pid for user @u to do (@op)', array('@u' => $user->uid, '@pid' => $object->id, '@op' => $op), WATCHDOG_DEBUG);
-  if (strpos(current_path(), "islandora/object/{$object->id}") !== FALSE) {
-    if (! user_is_logged_in() && strlen(variable_get('islandora_restricted_redirect_login', '')) > 0) {
-      // User is not logged in and we are redirecting to a login page/block
-      drupal_goto(variable_get('islandora_restricted_redirect_login', ''), array('query'=>array('destination'=>current_path())));
-    } else {
-      drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''));
+  if (islandora_restricted_is_frontend_op($op)) {
+    if (strpos(current_path(), "islandora/object/{$object->id}") !== FALSE) {
+      if (! user_is_logged_in() && strlen(variable_get('islandora_restricted_redirect_login', '')) > 0) {
+        // User is not logged in and we are redirecting to a login page/block
+        drupal_goto(variable_get('islandora_restricted_redirect_login', ''), array('query'=>array('destination'=>current_path())));
+      } else {
+        drupal_goto(variable_get('islandora_restricted_acces_denied_redirect', ''));
+      }
     }
   }
+  return FALSE;
+}
+
+/**
+ * Is the operation a front-end process.
+ *
+ * @param String $op
+ *   the operation.
+ *
+ * @return boolean
+ *   whether the operation is a front-end (user-facing) process.
+ */
+function islandora_restricted_is_frontend_op($op) {
+  $front_end_ops = array(
+    ISLANDORA_VIEW_OBJECTS,
+    ISLANDORA_METADATA_EDIT,
+    ISLANDORA_ADD_DS,
+    ISLANDORA_INGEST,
+    ISLANDORA_PURGE,
+    ISLANDORA_MANAGE_PROPERTIES,
+    ISLANDORA_VIEW_DATASTREAM_HISTORY,
+    ISLANDORA_MANAGE_DELETED_OBJECTS,
+    ISLANDORA_REVERT_DATASTREAM,
+    ISLANDORA_REGENERATE_DERIVATIVES,
+    ISLANDORA_REPLACE_DATASTREAM_CONTENT,
+  );
+  return in_array($op, $front_end_ops);
 }
 
 /**
@@ -127,7 +156,8 @@ function islandora_restricted_apply_policy(&$form_state, $parent = NULL) {
       if (!in_array($user_uri, $ingesting_restrictions['restricted']['users'])) {
         $ingesting_restrictions['restricted']['users'][] = $user_uri;
       }
-      foreach ($form_state['islandora']['objects'] as $object) {
+      $objects = &islandora_ingest_form_get_objects($form_state);
+      foreach ($objects as $object) {
         islandora_restricted_add_relationships($object, $ingesting_restrictions);
       }
     }
@@ -141,7 +171,8 @@ function islandora_restricted_apply_policy(&$form_state, $parent = NULL) {
  *   The passed through form_state from hook_islandora_ingest_steps().
  */
 function islandora_restricted_undo_policy(&$form_state) {
-  foreach ($form_state['islandora']['objects'] as $object) {
+  $objects = &islandora_ingest_form_get_objects($form_state);
+  foreach ($objects as $object) {
     islandora_restricted_remove_state_relationship($object);
   }
 }

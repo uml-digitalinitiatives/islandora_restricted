@@ -116,7 +116,7 @@ function islandora_restricted_parse_users_and_roles($rels_results, $current_site
       if (strpos($entity_uri, 'user') !== FALSE) {
         $parsed_rels['users'][] = $entity_uri;
       }
-      elseif (strpos($entity_uri, 'role') !== FALSE) {
+      if (strpos($entity_uri, 'role') !== FALSE) {
         $parsed_rels['roles'][] = $entity_uri;
       }
     }
@@ -196,19 +196,20 @@ function islandora_restricted_retrieve_role_from_uri($entity_uri) {
  */
 function islandora_restricted_add_relationships(AbstractObject $object, $restriction) {
   if (islandora_restricted_populated_restriction($restriction)) {
-    if (isset($restriction['state'])) {
-      islandora_restricted_add_state_relationship($object, $restriction['state']);
-    }
     // Future datastructure additions possible.
     foreach ($restriction as $key => $value) {
       if (is_array($value) && !empty($value)) {
         $restriction_type = $key;
         foreach ($value as $entity_array) {
           foreach ($entity_array as $entity_uri) {
+            dd('add restriction ' . $restriction_type . ' for ' . $entity_uri);
             islandora_restricted_add_entity_relationship_uri($object, $restriction_type, $entity_uri);
           }
         }
       }
+    }
+    if (isset($restriction['state'])) {
+      islandora_restricted_add_state_relationship($object, $restriction['state']);
     }
   }
 }
@@ -225,11 +226,6 @@ function islandora_restricted_add_relationships(AbstractObject $object, $restric
  */
 function islandora_restricted_add_entity_relationship_uri($object, $restricted_state, $link_uri) {
   global $user;
-  watchdog('islandora_restricted', 'add entities to @o with state @s for user @u', array(
-    '@o' => $object->id,
-    '@s' => $restricted_state,
-    '@u' => $user->uid,
-  ), WATCHDOG_DEBUG);
   if ($restricted_state == 'hidden') {
     $relationship_type = ISLANDORA_RESTRICTED_CAN_SEE_HIDDEN_RELATIONSHIP;
   }
@@ -333,7 +329,7 @@ function islandora_restricted_remove_relationships(AbstractObject $object) {
  * @param string $uid
  *   The Druapl UID that is being allowed to access the object.
  */
-function islandora_restricted_remove_user_relationship(AbstractObject $object, $restricted_state, $uid) {
+function islandora_restricted_remove_user_relationship(FedoraObject $object, $restricted_state, $uid) {
   if ($restricted_state == 'restricted') {
     $viewing_type = ISLANDORA_RESTRICTED_CAN_SEE_RESTRICTED_RELATIONSHIP;
   }
@@ -453,17 +449,14 @@ function islandora_restricted_user_has_access(AbstractObject $object, $user_to_c
     
   // Instead we'll leave the fixing of broken restrictions to a higher
   // level of rights
-  watchdog('islandora_restricted', 'Checking for user @u', array('@u' => $user_to_check->uid), WATCHDOG_DEBUG);
   if (user_access('administer site configuration', $user_to_check)) {
     return TRUE;
   }
   $restrictions = islandora_restricted_retrieve_restrictions($object, TRUE);
   if (isset($restrictions['state'])) {
-    watchdog('islandora_restricted', 'state @s', array('@s' => $restrictions['state']), WATCHDOG_DEBUG);
     $state = $restrictions['state'];
     foreach ($restrictions[$state] as $entity_type => $entity_values) {
       if ($entity_type == 'users') {
-        watchdog('islandora_restricted', 'compare user to @v', array('@v' => $entity_values), WATCHDOG_DEBUG);
         if (in_array(islandora_restricted_create_uri_link($user_to_check->uid, 'user'), $entity_values)) {
           return TRUE;
         }
