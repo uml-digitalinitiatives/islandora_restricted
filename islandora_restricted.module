@@ -62,6 +62,16 @@ function islandora_restricted_access(AbstractObject $object) {
 }
 
 /**
+ * Implements hook_islandora_datastream_access().
+ */
+function islandora_restricted_islandora_datastream_access($op, $object, $user) {
+  module_load_include('inc', 'islandora_restricted', 'includes/utilities');
+  if (!islandora_restricted_user_has_access($object->parent, $user)) {
+    return FALSE;
+  }
+}
+
+/**
  * Implements hook_islandora_object_access().
  */
 function islandora_restricted_islandora_object_access($op, $object, $user) {
@@ -247,6 +257,46 @@ function islandora_restricted_preprocess_islandora_basic_collection_grid(&$varia
  */
 function islandora_restricted_preprocess_islandora_basic_collection(&$variables) {
   islandora_restricted_preprocess_islandora_basic_collection_grid($variables);
+}
+
+ /**
+ * Implements hook_process_hook().
+ *
+ * Because we want to replace the TN for restricted objects to use our
+ * access denied image.
+ */
+function islandora_restricted_process_islandora_objects_subset(&$variables) {
+  module_load_include('inc', 'islandora', 'theme/theme');
+  global $user;
+  $module_path = drupal_get_path('module', 'islandora_restricted');
+  $variables['content'] = array(
+     '#attached' => array(
+       'css' => array(drupal_get_path('module', 'islandora') . '/css/islandora.objects.css'),
+     ),
+     '#theme' => 'islandora_objects_grid',
+  );
+  $variables['content']['#objects'] = array();
+
+  foreach ($variables['objects'] as $obj_id) {
+    $temp_obj = islandora_objects_object_mapper($obj_id);
+    $object = islandora_object_load($obj_id);
+    if (!islandora_restricted_user_has_access($object, $user)) {
+      $url = "islandora/object/{$obj_id}";
+      $img = array(
+        '#theme' => 'image',
+        '#path' => "$module_path/images/access_denied.png",
+        '#attributes' => array(),
+      );
+      $img = drupal_render($img);
+      $link_options = array('html' => TRUE, 'attributes' => array('title' => $object->label));
+      $temp_obj['thumb'] = l($img, $url, $link_options);
+      $variables['content']['#objects'][] = $temp_obj;
+    }
+    else {
+     $variables['content']['#objects'][] = $temp_obj;
+    }
+  }
+  $variables['content'] = drupal_render($variables['content']);
 }
 
 /**
