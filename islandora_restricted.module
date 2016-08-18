@@ -269,11 +269,14 @@ function islandora_restricted_process_islandora_objects_subset(&$variables) {
   module_load_include('inc', 'islandora', 'theme/theme');
   global $user;
   $module_path = drupal_get_path('module', 'islandora_restricted');
+  $display = (empty($_GET['display'])) ? $variables['display'] : $_GET['display'];
+  $grid_display = $display == 'grid';
+
   $variables['content'] = array(
      '#attached' => array(
        'css' => array(drupal_get_path('module', 'islandora') . '/css/islandora.objects.css'),
      ),
-     '#theme' => 'islandora_objects_grid',
+     '#theme' => (!$grid_display ? 'islandora_objects_list' : 'islandora_objects_grid'),
   );
   $variables['content']['#objects'] = array();
 
